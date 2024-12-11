@@ -56,10 +56,10 @@ def grid_logic(cfg):
 
     # origional testing
     def logic_func_large(data_size_1, data_size_2):
-        return (data_size_1 <= 23 or data_size_2 <=23)
+        return (data_size_1 <= 200 and data_size_2 <=200 and data_size_1 >= 101 and data_size_2 >= 101 and data_size_1 == data_size_2)
     logic_func = logic_func_large
     name = '_large'
-    max_size = 23+1
+    max_size = 200+1
     
     if cfg.ood_only:
         def logic_func_ood(data_size_1, data_size_2):
@@ -259,7 +259,7 @@ def main(cfg):
     ## Greedy decoding will overide any temperature arguments
 
     if cfg.max_size_given is not None: # allows unique splits for eval
-        max_size = max_size_given
+        max_size = cfg.max_size_given
 
     # Grid plots - grid search from 1x1 to 12x12 data
     data_sizes = list(range(1, max_size))
@@ -313,9 +313,10 @@ def main(cfg):
                     correct_total = 0
 
                     # get the correct dataset, these names may need to be changed if you make new datasets
+                    # file_path = f"../../../../data/arithmetic_data/+_bucket_method_n_20_m_20_20000000_p_00_reverse_all/hf_tokenized_dataset"
                     file_path = f"../../../../data/arithmetic_data/+_grid_eval_dataset_padded_tokenized/+_n_{data_size_1}_m_{data_size_2}_examples_100_diff_lens_seed_42/hf_tokenized_dataset"
                     if cfg.reverse_inputs:
-                        file_path = f"../../../../data/arithmetic_data/+_grid_eval_dataset_reverse_all_tokenized/+_n_{data_size_1}_m_{data_size_2}_examples_100_diff_lens_seed_42/hf_tokenized_dataset"
+                        file_path = f"../../../../data/arithmetic_data/+_grid_eval_dataset_reverse_all_tokenized_over_100/+_n_{data_size_1}_m_{data_size_2}_examples_100_diff_lens_exact_seed_42/hf_tokenized_dataset"
                     if cfg.mul:
                         file_path = f"../../../../data/arithmetic_data/x_grid_eval_dataset_2_reverse_all_tokenized/x_n_{data_size_1}_m_{data_size_2}_examples_100_diff_lens_exact_seed_91/hf_tokenized_dataset"
                     if cfg.pos_arth or cfg.pos_arth_ood:

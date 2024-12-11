@@ -84,6 +84,10 @@ python create_data_split.py --bucket --op + --n 2000 --m 2000 --limit 2000000 --
 
 python create_data_split.py --tokenize --dir_name +_bucket_method_n_30_m_30_2000000_p_00_reverse_all --tokenizer_type pad --test_split_ratio 0.05
 
-# 造数据集和tokenized
-python create_data_split.py --bucket --op d --n 20 --m 20 --limit 10000 --p 0.0 #加padding
+# 造train数据集和tokenized
+python create_data_split.py --bucket --op d --n 20 --m 20 --limit 20000000 --dir_name +_bucket_method_n_20_m_20_20000000_p_00 --p 0.0
 python create_data_split.py --tokenize --dir_name xxx --tokenizer_type pad --test_split_ratio 0.01
+
+# 造eval数据集和tokenized
+python create_data_split.py --num_samples 100 --op d --n 100 --m 100 --p 0.0 --exact --dir_name d_100_100 #加padding
+python create_data_split.py --tokenize --dir_name d_100_100 --tokenizer_type pad --test_split_ratio 1

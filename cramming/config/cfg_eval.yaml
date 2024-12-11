@@ -37,7 +37,7 @@ big_eval_step_9: False
 big_eval_step_10: False
 
 # for doing custom splits
-max_size_given: null
+max_size_given: 201
 start_ind_1_given: null
 start_ind_2_given: null
 

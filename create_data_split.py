@@ -67,6 +67,8 @@ def generate_dataset(dir_name, operation, n, m, num_examples, base_folder_name, 
             result = num1 - num2
         elif operation == 'x':
             result = num1 * num2
+        elif operation == 'd':
+            result = str(num1 // num2) + '$' + str(num1 % num2)
         else:
             raise ValueError("Invalid operation")
 
@@ -88,7 +90,7 @@ def generate_dataset(dir_name, operation, n, m, num_examples, base_folder_name, 
             result = result[::-1]
         
 
-        dataset_entry = f"{num1_str}{operation}{num2_str}={result}"
+        dataset_entry = f"{num1_str} {'/' if operation == 'd' else operation} {num2_str} = {result}"
         if interleave: # interleave the operands so the digits of the same significance are  next to eachother
             dataset_entry = ''.join([a + b for a, b in zip(num1_str, num2_str)]) + num1_str[len(num2_str):] + num2_str[len(num1_str):]+f"={result}"
         p = orgional_p
@@ -220,24 +222,24 @@ def character_histogram(dir_name, condense_white_space=False):
             counters_list[index][char] += 1
 
     # Plot the occurrences for each index
-    plt.figure(figsize=(10, 6))
-    indices = list(range(max_length))
-    bottom = [0] * max_length
-    sorted_chars = sorted(set(''.join(dataset)))
+    # plt.figure(figsize=(10, 6))
+    # indices = list(range(max_length))
+    # bottom = [0] * max_length
+    # sorted_chars = sorted(set(''.join(dataset)))
 
-    colors = cm.get_cmap('tab20', len(sorted_chars))
+    # colors = cm.get_cmap('tab20', len(sorted_chars))
 
-    for char, color in zip(sorted_chars, colors.colors):
-        occurrences = [counter[char] for counter in counters_list]
-        legend_char = char if char != " " else "\' \'"
-        plt.bar(indices, occurrences, label=legend_char, bottom=bottom, color=color)
-        bottom = [b + o for b, o in zip(bottom, occurrences)]
+    # for char, color in zip(sorted_chars, colors.colors):
+    #     occurrences = [counter[char] for counter in counters_list]
+    #     legend_char = char if char != " " else "\' \'"
+    #     plt.bar(indices, occurrences, label=legend_char, bottom=bottom, color=color)
+    #     bottom = [b + o for b, o in zip(bottom, occurrences)]
 
-    plt.xlabel('Index')
-    plt.ylabel('Occurrences')
-    plt.title("Character Frequency")
-    plt.legend(loc='lower center', bbox_to_anchor=(0.5, -0.25), ncol=10)
-    plt.savefig(f"{dir_name}/char_histogram{'_condensed_ws' if condense_white_space else ''}", bbox_inches='tight')
+    # plt.xlabel('Index')
+    # plt.ylabel('Occurrences')
+    # plt.title("Character Frequency")
+    # plt.legend(loc='lower center', bbox_to_anchor=(0.5, -0.25), ncol=10)
+    # plt.savefig(f"{dir_name}/char_histogram{'_condensed_ws' if condense_white_space else ''}", bbox_inches='tight')
 
 def token_histogram(dir_name, tokenizer_type="normal"):
     """Histogram of token occurences"""
@@ -357,7 +359,7 @@ def hints_helper(num_str, chars):
 def bucket_method_gen(n=3, m=3, operation='+', limit=1000, p=0, no_carry_addition=False, reverse_answer=False, start=1, reverse_all=False, keep_0_for_len_1=False, Flags=None):
     """Bucket method generator, samples all operand lengths equally"""
     dataset = []
-    padding = True
+    padding = False
     while True:
         for i in range(start,n+1):
             for j in range(start,m+1):
@@ -598,12 +600,12 @@ def main():
             print("char histogram made")
         tokenize_main(FLAGS.dir_name, FLAGS.tokenizer_type, test_split_ratio=FLAGS.test_split_ratio)
         print("tokenized")
-        if FLAGS.tokenizer_type != "sort": # do some automated plotting for each dataset
-            token_histogram(FLAGS.dir_name, FLAGS.tokenizer_type)
-            print("token histogram made")
-            data_analysis_main(FLAGS.dir_name) # more automated analysis
-    # else:
-    #     main_dataset_gen(FLAGS.dir_name, FLAGS.op, FLAGS.n, FLAGS.m, FLAGS.num_samples, FLAGS.exact, FLAGS.keep_places, FLAGS.prepend_zeros, FLAGS.reverse_answer, FLAGS.reverse_all, FLAGS.p, FLAGS.no_carry_addition, FLAGS.seed, interleave=FLAGS.interleave)
+        # if FLAGS.tokenizer_type != "sort": # do some automated plotting for each dataset
+        #     token_histogram(FLAGS.dir_name, FLAGS.tokenizer_type)
+        #     print("token histogram made")
+        #     data_analysis_main(FLAGS.dir_name) # more automated analysis
+    else:
+        main_dataset_gen(FLAGS.dir_name, FLAGS.op, FLAGS.n, FLAGS.m, FLAGS.num_samples, FLAGS.exact, FLAGS.keep_places, FLAGS.prepend_zeros, FLAGS.reverse_answer, FLAGS.reverse_all, FLAGS.p, FLAGS.no_carry_addition, FLAGS.seed, interleave=FLAGS.interleave)
 
 if __name__ == "__main__":
     main()
