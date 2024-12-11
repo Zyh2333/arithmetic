@@ -4,15 +4,12 @@ Multiple tokenizers for different tasks
 """
 
 from transformers import PreTrainedTokenizer
-import re
-import torch
-import random
 
 class CustomCharLevelTokenizerForAddingPadding(PreTrainedTokenizer):
     """Simple char level math tokenizer"""
     def __init__(self, **kwargs):
         # Define the characters to tokenize
-        characters = '0123456789+-x= '
+        characters = '0123456789+-x/=$ '
 
         # Define and set special tokens
         self.pad_token = '[PAD]'
@@ -79,8 +76,8 @@ class CustomCharLevelTokenizerForAddingPaddingWithIndexHints(PreTrainedTokenizer
     """Tokenizer for index hints"""
     def __init__(self, **kwargs):
         # Define the characters to tokenize
-        characters = '0123456789+-x= '
-        self.char_set = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwyz!@£#$%^&*()~?.,<>{}[]:;/|βΓΔδεζηθκΛλμΞξΠπΣςτΦφχΨψΩω"
+        characters = '0123456789+-x/=$ '
+        self.char_set = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwyz!@£#%^&*()~?.,<>{}[]:;|βΓΔδεζηθκΛλμΞξΠπΣςτΦφχΨψΩω"
         characters = characters + self.char_set
 
         # Define and set special tokens

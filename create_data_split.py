@@ -1,9 +1,6 @@
 from transformers import PreTrainedTokenizer
 import random
 import os
-import torch
-from transformers import AutoTokenizer
-from torch.nn.utils.rnn import pad_sequence
 from datasets import Dataset, DatasetDict
 import pandas as pd
 import datasets
@@ -143,49 +140,56 @@ def tokenize_and_save_dataset(dataset, tokenizer, directory, test_split_ratio=0.
         print(f"Decoded: {decoded}")
         print()
 
-    # Optionally pad the sequences
-    if pad_sequences:
-        max_length = max(len(entry) for entry in tokenized_dataset)
-        pad_token_id = tokenizer.pad_token_id
-        tokenized_dataset = [entry + [pad_token_id] * (max_length - len(entry)) for entry in tokenized_dataset]
+    batch_sizes = 1000000
+    turn = len(dataset) // batch_sizes + 1
+    max_length = max(len(entry) for entry in tokenized_dataset)
+    for i in range(0, turn):
+        print(i)
+        turn_tokenized_dataset = tokenized_dataset[batch_sizes * i: (i + 1) * batch_sizes]
+        # Optionally pad the sequences
+        if pad_sequences:
+            # max_length = max(len(entry) for entry in tokenized_dataset)
+            pad_token_id = tokenizer.pad_token_id
+            turn_tokenized_dataset = [entry + [pad_token_id] * (max_length - len(entry)) for entry in turn_tokenized_dataset]
+            tokenized_dataset[batch_sizes * i: (i + 1) * batch_sizes] = turn_tokenized_dataset
 
-    save_to_json_intermed = False # save the tokenized dataset to a json instead of hf
-    if save_to_json_intermed:
-        print(tokenized_dataset)
-        data_path = os.path.join(directory, "dataset.json")
-        with open(data_path, "w") as outfile:
-            # Iterate over each dictionary in the list
-            for entry in tokenized_dataset:
-                # Convert dictionary to JSON string and write it to the file
-                json.dump({'input_ids': entry}, outfile)
-                # Write a newline character to separate each JSON object
-                outfile.write('\n')
-        exit()
+        save_to_json_intermed = False # save the tokenized dataset to a json instead of hf
+        if save_to_json_intermed:
+            print(tokenized_dataset)
+            data_path = os.path.join(directory, "dataset.json")
+            with open(data_path, "w") as outfile:
+                # Iterate over each dictionary in the list
+                for entry in tokenized_dataset:
+                    # Convert dictionary to JSON string and write it to the file
+                    json.dump({'input_ids': entry}, outfile)
+                    # Write a newline character to separate each JSON object
+                    outfile.write('\n')
+            exit()
 
-    # Split the data into train and test sets
-    test_size = int(len(tokenized_dataset) * test_split_ratio)
-    train_data = tokenized_dataset[:-test_size]
-    test_data = tokenized_dataset[-test_size:]
-    # Convert to Hugging Face datasets with 'input_ids' column
-    train_dataset = Dataset.from_pandas(pd.DataFrame({"input_ids": train_data}))
-    test_dataset = Dataset.from_pandas(pd.DataFrame({"input_ids": test_data}))
+        # Split the data into train and test sets
+        test_size = int(len(turn_tokenized_dataset) * test_split_ratio)
+        train_data = turn_tokenized_dataset[:-test_size]
+        test_data = turn_tokenized_dataset[-test_size:]
+        # Convert to Hugging Face datasets with 'input_ids' column
+        train_dataset = Dataset.from_pandas(pd.DataFrame({"input_ids": train_data}))
+        test_dataset = Dataset.from_pandas(pd.DataFrame({"input_ids": test_data}))
 
-    # Create a DatasetDict with train and test splits
-    dataset_dict = DatasetDict({
-        "train": train_dataset,
-        "test": test_dataset
-    })
+        # Create a DatasetDict with train and test splits
+        dataset_dict = DatasetDict({
+            "train": train_dataset,
+            "test": test_dataset
+        })
 
-    # Save the dataset to disk
-    hf_dataset_path = os.path.join(directory, "hf_tokenized_dataset")
-    dataset_dict.save_to_disk(hf_dataset_path)
+        # Save the dataset to disk
+        hf_dataset_path = os.path.join(directory, f"hf_tokenized_dataset_{i}")
+        dataset_dict.save_to_disk(hf_dataset_path)
 
-    # # Save tokenizer
-    # print(f"Tokenized data saved to {tokenized_data_path}")
-    print(f"HuggingFace Dataset saved to {hf_dataset_path}")
+        # # Save tokenizer
+        # print(f"Tokenized data saved to {tokenized_data_path}")
+        print(f"HuggingFace Dataset saved to {hf_dataset_path}")
 
     # return dataset_dict, tokenized_data_path, hf_dataset_path #, tokenizer_dir
-    return dataset_dict, hf_dataset_path
+    # return dataset_dict, hf_dataset_path
 
 def character_histogram(dir_name, condense_white_space=False):
     """Histogram of character occurences"""
@@ -243,10 +247,10 @@ def token_histogram(dir_name, tokenizer_type="normal"):
     tokenized_dataset = datasets.load_from_disk(hf_dir_name)
     train_part = tokenized_dataset["train"]
     test_part = tokenized_dataset["test"]
-    
+
     tokenizer = get_tokenizer(tokenizer_type)
     EOS_token = tokenizer._convert_token_to_id("[EOS]")
-    
+
     dataset = []
     for example in train_part:
         tokens = example["input_ids"]
@@ -274,7 +278,7 @@ def token_histogram(dir_name, tokenizer_type="normal"):
     bottom = [0] * max_length
     print(tokenizer.vocab.values())
     sorted_chars = [str(x) for x in sorted(tokenizer.vocab.values())]
-    
+
     colors = cm.get_cmap('tab20', len(sorted_chars))
 
     for char, color in zip(sorted_chars, colors.colors):
@@ -324,11 +328,11 @@ def tokenize_main(dir_name, tokenizer_type, test_split_ratio=0.05):
                 dataset.extend(stripped_lines)
     random.shuffle(dataset) # shuffling all the datasets together
 
-    dataset_dict, hf_dataset_path = tokenize_and_save_dataset(dataset, tokenizer, data_folder_name,
-                                                                                   pad_sequences=True,
-                                                                                   test_split_ratio=test_split_ratio)
-    tokenized_dataset = datasets.load_from_disk(hf_dataset_path)
-    print(tokenized_dataset)
+    tokenize_and_save_dataset(dataset, tokenizer, data_folder_name,
+                              pad_sequences=True,
+                              test_split_ratio=test_split_ratio)
+    # tokenized_dataset = datasets.load_from_disk(hf_dataset_path)
+    # print(tokenized_dataset)
 
 
 def pick_char_set(max_len):
@@ -353,6 +357,7 @@ def hints_helper(num_str, chars):
 def bucket_method_gen(n=3, m=3, operation='+', limit=1000, p=0, no_carry_addition=False, reverse_answer=False, start=1, reverse_all=False, keep_0_for_len_1=False, Flags=None):
     """Bucket method generator, samples all operand lengths equally"""
     dataset = []
+    padding = True
     while True:
         for i in range(start,n+1):
             for j in range(start,m+1):
@@ -376,6 +381,11 @@ def bucket_method_gen(n=3, m=3, operation='+', limit=1000, p=0, no_carry_additio
                     result = num1 - num2
                 elif operation == 'x':
                     result = num1 * num2
+                elif operation == 'd':
+                    if num2_str == '0':
+                        result = 'error'
+                    else:
+                        result = str(num1 // num2) + '$' + str(num1 % num2)
                 else:
                     raise ValueError("Invalid operation")
 
@@ -392,8 +402,10 @@ def bucket_method_gen(n=3, m=3, operation='+', limit=1000, p=0, no_carry_additio
                     result = hints_helper(result, chars)
                     num1_str = hints_helper(num1_str, chars)
                     num2_str = hints_helper(num2_str, chars)
+                elif padding:
+                    dataset_entry = f"{num1_str} {'/' if operation == 'd' else operation} {num2_str} = {result}"
                 else:
-                    dataset_entry = f"{num1_str}{operation}{num2_str}={result}"
+                    dataset_entry = f"{num1_str}{'/' if operation == 'd' else operation}{num2_str}={result}"
 
                     if p > 0: # adds random spaces
                         spaced_string = ""
@@ -520,6 +532,7 @@ def main():
     parser.add_argument("--prepend_zeros", default=0, type=int, help="prepend this number of zeros to n, m and answer (adds 1 more to answer)")
     parser.add_argument('--reverse_answer', action='store_true', help="reverses the answer")
     parser.add_argument('--reverse_all', action='store_true', help="reverses the inputs and answer")
+    # 生成的加法数据集中没有进位
     parser.add_argument('--no_carry_addition', action='store_true', help="no carried in the addition")
     parser.add_argument('--test_split_ratio', default=0.05, type=float, help="test split percentage")
     parser.add_argument('--interleave', action='store_true', help="interleave digits of the operands")
@@ -589,8 +602,8 @@ def main():
             token_histogram(FLAGS.dir_name, FLAGS.tokenizer_type)
             print("token histogram made")
             data_analysis_main(FLAGS.dir_name) # more automated analysis
-    else:
-        main_dataset_gen(FLAGS.dir_name, FLAGS.op, FLAGS.n, FLAGS.m, FLAGS.num_samples, FLAGS.exact, FLAGS.keep_places, FLAGS.prepend_zeros, FLAGS.reverse_answer, FLAGS.reverse_all, FLAGS.p, FLAGS.no_carry_addition, FLAGS.seed, interleave=FLAGS.interleave)
+    # else:
+    #     main_dataset_gen(FLAGS.dir_name, FLAGS.op, FLAGS.n, FLAGS.m, FLAGS.num_samples, FLAGS.exact, FLAGS.keep_places, FLAGS.prepend_zeros, FLAGS.reverse_answer, FLAGS.reverse_all, FLAGS.p, FLAGS.no_carry_addition, FLAGS.seed, interleave=FLAGS.interleave)
 
 if __name__ == "__main__":
     main()
