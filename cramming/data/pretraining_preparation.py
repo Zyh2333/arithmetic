@@ -66,11 +66,15 @@ def load_pretraining_corpus(cfg_data, cfg_impl, data_dir: str = None):
         return _load_from_hub(cfg_data, data_path)
     elif provider == "arithmetic":
         # our math data
-        tokenized_dataset_path = data_src["tokenized_dataset_path"]
-        tokenized_dataset_path = os.path.join(data_path, tokenized_dataset_path)
-        print(f"Loading tokenized dataset from {tokenized_dataset_path}")
-        tokenized_data = load_tokenized_data(tokenized_dataset_path)
-        print(f"Loaded tokenized dataset from {tokenized_dataset_path}")
+        # tokenized_dataset_path = data_src["tokenized_dataset_path"]
+        base_path = "arithmetic_data/x_bucket_method_n_20_m_20_20000000_p_00/hf_tokenized_dataset_"
+        split = 20
+        tokenized_dataset_paths = [base_path + str(i) for i in range(0, split + 1)]
+        tokenized_dataset_paths = [os.path.join(data_path, tokenized_dataset_path) for tokenized_dataset_path in tokenized_dataset_paths]
+        print(f"Loading tokenized dataset from {tokenized_dataset_paths}")
+        # tokenized_data = load_tokenized_data(tokenized_dataset_path)
+        tokenized_data = merge_datasets(tokenized_dataset_paths)
+        print(f"Loaded tokenized dataset from {tokenized_dataset_paths}")
         tokenizer = get_tokenizer(tokenizer_type)
         print(f"Loaded tokenizer {tokenizer_type}")
         tokenizer.model_max_length = cfg_data["seq_length"]  # not perfect but better than nothing
@@ -113,13 +117,14 @@ def load_pretraining_corpus(cfg_data, cfg_impl, data_dir: str = None):
 
                 if not cfg_impl.temporary_corpus:
                     # Save to base directory:
-                    save_corpus(os.path.join(cfg_impl.path, processed_dataset_dir))
+                    # save_corpus(os.path.join(cfg_impl.path, processed_dataset_dir))
                     if cfg_impl.local_staging_dir is not None:
                         # Optionally also copy into local staging directory
                         data_path = stage_dataset(data_path, cfg_impl.local_staging_dir)
                 else:
+                    pass
                     # Directly use staging directory
-                    save_corpus(os.path.join(cfg_impl.local_staging_dir, processed_dataset_dir))
+                    # save_corpus(os.path.join(cfg_impl.local_staging_dir, processed_dataset_dir))
 
             # Reload dataset
             tokenized_dataset = datasets.load_from_disk(data_path)
@@ -147,6 +152,28 @@ def load_pretraining_corpus(cfg_data, cfg_impl, data_dir: str = None):
 def load_tokenized_data(tokenized_dataset_path):
     tokenized_dataset = datasets.load_from_disk(tokenized_dataset_path)
     return tokenized_dataset
+
+
+def merge_datasets(dataset_paths):
+    datasets_list = [load_tokenized_data(path) for path in dataset_paths]
+
+    if isinstance(datasets_list[0], dict):
+        # 处理 DatasetDict 类型的数据集
+        merged_dataset_dict = {}
+        split_names = list(datasets_list[0].keys())
+
+        for split_name in split_names:
+            split_datasets = [dataset[split_name] for dataset in datasets_list]
+            merged_split = datasets.concatenate_datasets(split_datasets)
+            merged_dataset_dict[split_name] = merged_split
+
+        merged_dataset = datasets.DatasetDict(merged_dataset_dict)
+    else:
+        # 处理 Dataset 类型的数据集
+        merged_dataset = datasets.concatenate_datasets(datasets_list)
+
+    return merged_dataset
+
 
 def convert_to_hf_dataset(tokenized_data):
     # Convert the PyTorch tensor to a list of lists (if it's not already)
