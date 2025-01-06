@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # 定义起始和结束值
-START_N=173
+START_N=121
 END_N=200
 START_M=1
 END_M=200
-OPS=('+')
+OPS=('-')
 
 # 定义步长
 STEP=1
@@ -20,15 +20,14 @@ for OP in ${OPS[*]}; do
           echo $dir_name
 
           # 运行第一个命令
-          python create_data_split.py \
+          python create_data_split_-.py \
               --num_samples 100 \
               --op $OP \
               --n $n \
               --m $m \
               --p 0.0 \
               --exact \
-              --reverse_all \
-              --dir_name $dir_name
+              --reverse_all
 
           # 检查上一条命令是否成功执行
           if [ $? -ne 0 ]; then
@@ -37,13 +36,13 @@ for OP in ${OPS[*]}; do
           fi
 
           # 运行第二个命令
-          python create_data_split.py \
+          python create_data_split_-.py \
               --tokenize \
               --tokenizer_type pad \
               --test_split_ratio 1 \
               --n $n \
-              --m $m --reverse_all \
-              --dir_name $dir_name
+              --m $m \
+              --reverse_all
 
           # 检查上一条命令是否成功执行
           if [ $? -ne 0 ]; then

@@ -67,7 +67,10 @@ def load_pretraining_corpus(cfg_data, cfg_impl, data_dir: str = None):
     elif provider == "arithmetic":
         # our math data
         # tokenized_dataset_path = data_src["tokenized_dataset_path"]
-        base_path = "arithmetic_data/x_bucket_method_n_20_m_20_20000000_p_00/hf_tokenized_dataset_"
+        # base_path = "arithmetic_data/x_bucket_method_n_20_m_20_20000000_p_00/hf_tokenized_dataset_"
+        # base_path = "arithmetic_data/d_bucket_method_n_20_m_20_20000000_p_00/hf_tokenized_dataset_"
+        # base_path = "arithmetic_data/+_bucket_method_n_20_m_20_20000000_p_00/hf_tokenized_dataset_"
+        base_path = "arithmetic_data/d_bucket_method_n_20_m_20_20000000_p_00_reverse_all/hf_tokenized_dataset_"
         split = 20
         tokenized_dataset_paths = [base_path + str(i) for i in range(0, split + 1)]
         tokenized_dataset_paths = [os.path.join(data_path, tokenized_dataset_path) for tokenized_dataset_path in tokenized_dataset_paths]

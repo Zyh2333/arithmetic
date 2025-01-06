@@ -14,7 +14,8 @@ import datasets
 import os
 from typing import List, Dict
 from cramming.data.tokenizer_preparation import get_tokenizer
-import random
+from datetime import datetime
+import time
 
 log = logging.getLogger(__name__)
 
@@ -56,7 +57,7 @@ def grid_logic(cfg):
 
     # origional testing
     def logic_func_large(data_size_1, data_size_2):
-        return (data_size_1 <= 200 and data_size_2 <=200 and data_size_1 >= 101 and data_size_2 >= 101 and data_size_1 == data_size_2)
+        return (data_size_1 <= 200 and data_size_2 <=200 and data_size_1 >= 100 and data_size_2 >= 100)
     logic_func = logic_func_large
     name = '_large'
     max_size = 200+1
@@ -202,6 +203,7 @@ def main(cfg):
     tokenizer, cfg_arch, model_file = cramming.utils.find_pretrained_checkpoint(cfg.eval.checkpoint,
                                                                                 local_checkpoint_folder,
                                                                                 cfg.eval.arch_modifications)
+    output_date = datetime.now()
     if cfg.max_rec is not None: # can have more/less recurrences for eval
         cfg_arch.maximal_recurrence_in_eval = cfg.max_rec
     else:
@@ -213,11 +215,35 @@ def main(cfg):
 
     if cfg.mul: # multiplication
         def logic_func_for_mul(data_size_1, data_size_2):
-            return (data_size_1 <= 25 or data_size_2 <= 25)
+            # return (data_size_1 <= 25 or data_size_2 <= 25)
+            # return (100 <= data_size_1 <= 200 and 100 <= data_size_2 <= 200)
+            # return (20 <= data_size_1 <= 100 and 20 <= data_size_2 <= 100)
+            return (50 >= data_size_1 >= 1 and 50 >= data_size_2 >= 1)
         logic_func = logic_func_for_mul
-        name = '_large'
-        max_size = 25+1
+        name = '_x_large'
+        max_size = cfg.max_size_given
     log.info(f"mul = {cfg.mul}")
+
+    if cfg.sub: # sub
+        def logic_func_for_sub(data_size_1, data_size_2):
+            return (120 >= data_size_1 >= 1 and 120 >= data_size_2 >= 1)
+        logic_func = logic_func_for_sub
+        name = '_x_large'
+        max_size = cfg.max_size_given
+
+    if cfg.div: # div
+        def logic_func_for_div(data_size_1, data_size_2):
+            return (100 >= data_size_1 >= 1 and 100 >= data_size_2 >= 1)
+        logic_func = logic_func_for_div
+        name = '_x_large'
+        max_size = cfg.max_size_given
+
+    if cfg.add: # add
+        def logic_func_for_add(data_size_1, data_size_2):
+            return (92 <= data_size_1 <= 120 and 120 >= data_size_2 >= 1)
+        logic_func = logic_func_for_add
+        name = '_x_large'
+        max_size = cfg.max_size_given
 
     if cfg.pos_arth: # bitwise OR
         def logic_func_for_pos(data_size_1, data_size_2):
@@ -305,25 +331,58 @@ def main(cfg):
                     if not proceed:
                         continue
 
-                print(f"evaluating for {data_size_1} and {data_size_2}")
-
                 if logic_func(data_size_1, data_size_2):
+                    begin_time = time.time()
+                    print(f"evaluating for {data_size_1} and {data_size_2}")
+                    output_folder = os.path.join(cfg.base_dir, cfg.name, "results", output_date.strftime("%Y-%m-%d-%H-%M-%S"))
+                    if not os.path.exists(output_folder):
+                        os.makedirs(output_folder)
+                    output_file = os.path.join(output_folder, "results.log")
                     completed_one = True
                     log.info(f"Starting iteration in grid eval for size: {data_size_1} and {data_size_2}")
                     correct_total = 0
 
                     # get the correct dataset, these names may need to be changed if you make new datasets
                     # file_path = f"../../../../data/arithmetic_data/+_bucket_method_n_20_m_20_20000000_p_00_reverse_all/hf_tokenized_dataset"
-                    file_path = f"../../../../data/arithmetic_data/+_grid_eval_dataset_padded_tokenized/+_n_{data_size_1}_m_{data_size_2}_examples_100_diff_lens_seed_42/hf_tokenized_dataset"
+                    file_path = f"../../../../data/arithmetic_data/-/-_{data_size_1}_{data_size_2}/hf_tokenized_dataset_0"
                     if cfg.reverse_inputs:
                         file_path = f"../../../../data/arithmetic_data/+_grid_eval_dataset_reverse_all_tokenized_over_100/+_n_{data_size_1}_m_{data_size_2}_examples_100_diff_lens_exact_seed_42/hf_tokenized_dataset"
                     if cfg.mul:
-                        file_path = f"../../../../data/arithmetic_data/x_grid_eval_dataset_2_reverse_all_tokenized/x_n_{data_size_1}_m_{data_size_2}_examples_100_diff_lens_exact_seed_91/hf_tokenized_dataset"
+                        # file_path = f"../../../../data/arithmetic_data/x_grid_eval_dataset_2_reverse_all_tokenized/x_n_{data_size_1}_m_{data_size_2}_examples_100_diff_lens_exact_seed_91/hf_tokenized_dataset"
+                        file_path = [f"../../../../data/arithmetic_data/x_reverse_all/x_{data_size_1}_{data_size_2}_reverse_all/hf_tokenized_dataset_0"]
+                        # splits = 20
+                        # base_dir = "../../../../data/arithmetic_data/x_bucket_method_n_20_m_20_20000000_p_00/hf_tokenized_dataset_"
+                        # file_path = [base_dir + str(i) for i in range(0, splits + 1)]
+                        # file_path = f"../../../../data/arithmetic_data/x_bucket_method_n_20_m_20_20000000_p_00/hf_tokenized_dataset_0"
+                    if cfg.sub:
+                        # file_path = f"../../../../data/arithmetic_data/x_grid_eval_dataset_2_reverse_all_tokenized/x_n_{data_size_1}_m_{data_size_2}_examples_100_diff_lens_exact_seed_91/hf_tokenized_dataset"
+                        file_path = [f"../../../../data/arithmetic_data/-_reverse_all/-_{data_size_1}_{data_size_2}_reverse_all/hf_tokenized_dataset_0"]
+                        # splits = 20
+                        # base_dir = "../../../../data/arithmetic_data/x_bucket_method_n_20_m_20_20000000_p_00/hf_tokenized_dataset_"
+                        # file_path = [base_dir + str(i) for i in range(0, splits + 1)]
+                        # file_path = f"../../../../data/arithmetic_data/x_bucket_method_n_20_m_20_20000000_p_00/hf_tokenized_dataset_0"
+                    if cfg.div:
+                        # file_path = f"../../../../data/arithmetic_data/x_grid_eval_dataset_2_reverse_all_tokenized/x_n_{data_size_1}_m_{data_size_2}_examples_100_diff_lens_exact_seed_91/hf_tokenized_dataset"
+                        file_path = [f"../../../../data/arithmetic_data/d/d_{data_size_1}_{data_size_2}/hf_tokenized_dataset_0"]
+                        # splits = 20
+                        # base_dir = "../../../../data/arithmetic_data/x_bucket_method_n_20_m_20_20000000_p_00/hf_tokenized_dataset_"
+                        # file_path = [base_dir + str(i) for i in range(0, splits + 1)]
+                        # file_path = f"../../../../data/arithmetic_data/x_bucket_method_n_20_m_20_20000000_p_00/hf_tokenized_dataset_0"
+                    if cfg.add:
+                        # file_path = f"../../../../data/arithmetic_data/x_grid_eval_dataset_2_reverse_all_tokenized/x_n_{data_size_1}_m_{data_size_2}_examples_100_diff_lens_exact_seed_91/hf_tokenized_dataset"
+                        file_path = [f"../../../../data/arithmetic_data/+_reverse_all/+_{data_size_1}_{data_size_2}_reverse_all/hf_tokenized_dataset_0"]
+                        # splits = 20
+                        # base_dir = "../../../../data/arithmetic_data/x_bucket_method_n_20_m_20_20000000_p_00/hf_tokenized_dataset_"
+                        # file_path = [base_dir + str(i) for i in range(0, splits + 1)]
+                        # file_path = f"../../../../data/arithmetic_data/x_bucket_method_n_20_m_20_20000000_p_00/hf_tokenized_dataset_0"
                     if cfg.pos_arth or cfg.pos_arth_ood:
                         file_path = f"../../../../data/arithmetic_data/pos_or_one_vec_zeros_eval/or_one_vec_zeros_{data_size_1}_{data_size_2}/hf_tokenized_dataset"
-                    tokenized_dataset = datasets.load_from_disk(file_path)["test"]
+                    # tokenized_dataset = datasets.load_from_disk(file_path)["test"]
+                    from cramming.data.pretraining_preparation import merge_datasets
+                    tokenized_dataset = merge_datasets(file_path)["test"]
                     data_loader = torch.utils.data.DataLoader(tokenized_dataset, batch_size=100, shuffle=False)
                     equals_tensor = data_size_1+data_size_2+6
+                    # equals_tensor = data_size_1+data_size_2+2
                     if cfg.pos_arth or cfg.pos_arth_ood:
                         equals_tensor = data_size_1+data_size_2+2
 
@@ -340,8 +399,11 @@ def main(cfg):
                             # removes the padding from the eval data
                             num1 = tokenized_prompts[:,:data_size_1]
                             op = tokenized_prompts[:,data_size_1+1:data_size_1+2]
+                            # op = tokenized_prompts[:,data_size_1:data_size_1+1]
                             num2 = tokenized_prompts[:,data_size_1+3:data_size_1+data_size_2+3]
+                            # num2 = tokenized_prompts[:,data_size_1+1:data_size_1+data_size_2+1]
                             equals = tokenized_prompts[:,data_size_1+data_size_2+4:data_size_1+data_size_2+5]
+                            # equals = tokenized_prompts[:,data_size_1+data_size_2+1:data_size_1+data_size_2+2]
                             tokenized_prompts = torch.cat((num1, op, num2, equals), dim=1)
  
                         if cfg_data_sources_values_list["tokenizer_type"] == "index":
@@ -389,14 +451,18 @@ def main(cfg):
                     elementwise_equal = torch.eq(eval_tensor, tokenized_answers)
                     rows_equal = torch.all(elementwise_equal, dim=1)
                     num_equal_rows = torch.sum(rows_equal).item()
+                    print('num_equal_rows', num_equal_rows)
                     correct_total += (num_equal_rows/tokenized_prompts.shape[0])
-                    log.info(f"accuracy for {data_size_1}, {data_size_2}: {num_equal_rows} = {correct_total*100}%")
+                    log.info(f"accuracy for {data_size_1}, {data_size_2}: {num_equal_rows} = {correct_total*100}% time: {time.time() - begin_time}")
+                    with open(output_file, "a", encoding="UTF-8") as ff:
+                        ff.write(f"{data_size_1} {data_size_2} {correct_total} {time.time() - begin_time}\n")
 
                     # combine the prompts and outputs
                     complete_lines = torch.cat((tokenized_prompts,predicted_ids), dim=1)
                     tokens_list = complete_lines.tolist()
                     decoded_batch = list(map(lambda seq: list(map(lambda token: vocab[token], seq)), tokens_list)) # map token ids to tokens
-                    log.info(f"example for {data_size_1}, {data_size_2}: {decoded_batch[0]}")
+                    # decoded_str = decoded_batch[0].join('')
+                    # log.info(f"example for {data_size_1}, {data_size_2}: {decoded_str[:data_size_1]} {op} {decoded_str[data_size_1:data_size_2]} = {decoded_str[data_size_2:]}")
                     # save the answers down so we don't eval twice ever
                     with open(f"outputs/+_n_{data_size_1}_m_{data_size_2}.json", 'w') as json_file:
                         json.dump(decoded_batch, json_file)
@@ -414,7 +480,7 @@ def main(cfg):
             json.dump(acc_grid.tolist(), file)
         
         # Grid plots - one for accs one for contains
-        grid_plotter(acc_grid, name=name)
+        # grid_plotter(acc_grid, name=name)
 
     if cfg.extended_eval:
         # extended eval to eval large numbers easily, used the large eval numebers to split up into multiple parts

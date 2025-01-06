@@ -9,7 +9,7 @@ defaults:
   - _self_
   - override hydra/job_logging: custom
 
-reverse_inputs: True
+reverse_inputs: False
 pad_zeros: 0
 extended_eval: False
 greedy: True
@@ -42,7 +42,10 @@ start_ind_1_given: null
 start_ind_2_given: null
 
 ## Multiplication
-mul: False
+mul: True
+sub: False
+div: False
+add: False
 
 ## Pos arithmetic
 pos_arth: False
