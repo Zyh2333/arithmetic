@@ -596,7 +596,7 @@ def main():
 
     if FLAGS.tokenize:
         if FLAGS.tokenizer_type != "sort": # do some automated plotting for each dataset
-            character_histogram(FLAGS.dir_name)
+            # character_histogram(FLAGS.dir_name)
             print("char histogram made")
         tokenize_main(FLAGS.dir_name, FLAGS.tokenizer_type, test_split_ratio=FLAGS.test_split_ratio)
         print("tokenized")

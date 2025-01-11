@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 定义起始和结束值
-START_N=173
+START_N=1
 END_N=200
 START_M=1
 END_M=200
@@ -16,7 +16,7 @@ for OP in ${OPS[*]}; do
   for ((n=$START_N; n<=$END_N; n+=STEP)); do
       for ((m=$START_M; m<=$END_M; m+=STEP)); do
           # 创建目录名称
-          dir_name="${OP}_${n}_${m}_reverse_all"
+          dir_name="${OP}_${n}_${m}_reverse_all_pad_0"
           echo $dir_name
 
           # 运行第一个命令

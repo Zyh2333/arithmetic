@@ -49,6 +49,31 @@ class CustomCharLevelTokenizerForAddingPadding(PreTrainedTokenizer):
     def _tokenize(self, text):
         # Tokenize the text character by character
         # text = re.sub('\s+',' ',text)
+        if '+' in text:
+            op_index = text.index('+')
+        if '-' in text:
+            op_index = text.index('-')
+        if 'x' in text:
+            op_index = text.index('x')
+        if '/' in text:
+            op_index = text.index('/')
+        # eq_index = text.index('=')
+        # first_len = op_index
+        # second_len = eq_index - op_index - 1
+        # if first_len != second_len:
+        #     if first_len > second_len:
+        #         text = text[:eq_index] + ('0' * (first_len - second_len)) + text[eq_index:]
+        #     else:
+        #         text = text[:op_index] + ('0' * (second_len - first_len)) + text[op_index:]
+        eq_index = text.index('=')
+        first_len = op_index - 1
+        second_len = eq_index - op_index - 3
+        if first_len != second_len:
+            if first_len > second_len:
+                text = text[:eq_index - 1] + ('0' * (first_len - second_len)) + text[eq_index - 1:]
+            else:
+                text = text[:op_index - 1] + ('0' * (second_len - first_len)) + text[op_index - 1:]
+        print('tokenized: ' + text)
         temp = [char if char in self.vocab else self.unk_token for char in text]
         temp = [item.replace(' ', '[PAD]') for item in temp]
         return temp
